@@ -18,7 +18,7 @@ func BuscaTodosOsProdutos() []Produto {
 	p := Produto{}
 	produtos := []Produto{}
 
-	query, err := db.Query("select * from produtos")
+	query, err := db.Query("select * from produtos ORDER BY id")
 
 	if err != nil {
 		fmt.Println("Erro ao selecionar produtos: ", err.Error())
@@ -80,4 +80,53 @@ func DeletaProduto(id string) {
 	}
 
 	query.Exec(id)
+}
+
+func FindProduto(id string) Produto {
+
+	db := db.ConectaComBancoDeDados()
+	defer db.Close()
+
+	produto, err := db.Query("SELECT * FROM produtos WHERE id = $1", id)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	produtoParaAtualizar := Produto{}
+
+	for produto.Next() {
+		var id, quantidade int
+		var nome, descricao string
+		var preco float64
+
+		err = produto.Scan(&id, &nome, &descricao, &preco, &quantidade)
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		produtoParaAtualizar.Id = id
+		produtoParaAtualizar.Nome = nome
+		produtoParaAtualizar.Descricao = descricao
+		produtoParaAtualizar.Preco = preco
+		produtoParaAtualizar.Quantidade = quantidade
+
+	}
+
+	return produtoParaAtualizar
+}
+
+func Update(nome, descricao string, preco float64, id, quantidade int) {
+	db := db.ConectaComBancoDeDados()
+	defer db.Close()
+
+	query, err := db.Prepare("UPDATE produtos SET nome = $1, descricao = $2, preco = $3, quantidade = $4 WHERE id = $5")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	query.Exec(nome, descricao, preco, quantidade, id)
+
 }

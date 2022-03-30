@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"text/template"
 
-	"github.com/domjesus/webapp/db"
 	"github.com/domjesus/webapp/models"
 )
 
@@ -48,16 +47,25 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 
 func Edit(w http.ResponseWriter, r *http.Request) {
 	idProd := r.URL.Query().Get("id")
-	db := db.ConectaComBancoDeDados()
-	defer db.Close()
 
-	produto, err := db.Prepare("SELECT * FROM produtos WHERE id = $1")
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	produto.Exec(idProd)
+	produto := models.FindProduto(idProd)
 
 	temp.ExecuteTemplate(w, "Edit", produto)
+}
+
+func Update(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "POST" {
+		id, _ := strconv.Atoi(r.FormValue("id"))
+		nome := r.FormValue("nome")
+		descricao := r.FormValue("descricao")
+		preco, _ := strconv.ParseFloat(r.FormValue("preco"), 64)
+		quantidade, _ := strconv.Atoi(r.FormValue("quantidade"))
+
+		models.Update(nome, descricao, preco, id, quantidade)
+
+	}
+
+	http.Redirect(w, r, "/", 301)
+
 }
